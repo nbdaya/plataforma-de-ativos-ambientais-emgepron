@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Solicitar acesso{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-visual">
+        <div class="brand">EMGEPRON</div>
+        <div class="brand-sub">PLATAFORMA DE ATIVOS AMBIENTAIS</div>
+        <div class="visual-copy">
+            <h1>Solicitar<br>acesso</h1>
+            <p>Cadastro inicial de usuário</p>
+        </div>
+        <div class="navy-badge">⚓ Marinha do Brasil</div>
+    </div>
+    <div class="auth-panel">
+        <div class="auth-card">
+            <h2>Solicitar acesso</h2>
+            <p class="muted">Informe seus dados institucionais. Uma senha temporária será gerada para o primeiro acesso.</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endwith %}
+            <form method="post">
+                <label>Nome completo</label>
+                <input name="name" required placeholder="Nome do usuário">
+                <label>E-mail institucional</label>
+                <input type="email" name="email" required placeholder="seu.email@marinha.mil.br">
+                <label>Organização Militar</label>
+                <input name="om" required placeholder="Ex.: CAMR">
+                <button class="primary" type="submit">Solicitar acesso</button>
+            </form>
+            <a class="link" href="{{ url_for('index') }}">Voltar para o login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Ativos Ambientais{% endblock %}
+{% block content %}
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand side-brand">EMGEPRON</div>
+        <div class="brand-sub">PLATAFORMA DE ATIVOS AMBIENTAIS</div>
+        <nav>
+            <a class="active">⌂ Dashboard</a>
+            <a>▦ Projetos</a>
+            <a>◉ Ativos Ambientais</a>
+            <a>▣ Dados e Evidências</a>
+            <a>◫ Mensuração e Indicadores</a>
+            <a>✓ Verificação</a>
+            <a>⬡ Blockchain <small>(em breve)</small></a>
+            <a>↗ Comercialização</a>
+            <a>▤ Relatórios</a>
+            <a>⚙ Administração</a>
+        </nav>
+        <div class="side-footer">Tecnologia a serviço<br>da Marinha do Brasil</div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <h1>Plataforma de Ativos Ambientais</h1>
+                <span>Gestão • Rastreabilidade • Integridade • Valorização</span>
+            </div>
+            <div class="user-menu">
+                <span>⚓ Marinha do Brasil</span>
+                <span class="avatar">{{ user["name"][0] }}</span>
+                <div>{{ user["name"] }}<small>{{ user["role"] }}</small></div>
+                <a href="{{ url_for('logout') }}">Sair</a>
+            </div>
+        </header>
+
+        <section class="content">
+            <div class="welcome">
+                <div><strong>Olá, {{ user["name"] }}.</strong> Bem-vindo à infraestrutura de gestão ambiental da EMGEPRON.</div>
+                <div class="pill">● {{ user["om"] }}</div>
+            </div>
+
+            <div class="kpis">
+                <div class="kpi"><span>Projetos</span><strong>{{ totals.projects }}</strong><em>+3 no período</em></div>
+                <div class="kpi green"><span>Ativos gerados</span><strong>{{ "{:,}".format(totals.assets).replace(",", ".") }}</strong><em>+12%</em></div>
+                <div class="kpi blue"><span>CO₂e mensurado</span><strong>{{ "{:,.1f}".format(totals.co2).replace(",", "X").replace(".", ",").replace("X",".") }} t</strong><em>+18%</em></div>
+                <div class="kpi yellow"><span>Energia renovável</span><strong>{{ "{:,.0f}".format(totals.renewable).replace(",", ".") }} MWh</strong><em>+25%</em></div>
+                <div class="kpi purple"><span>Diesel evitado</span><strong>{{ "{:,.0f}".format(totals.diesel).replace(",", ".") }} L</strong><em>+20%</em></div>
+                <div class="kpi money"><span>Valor potencial</span><strong>R$ {{ "{:,.1f}".format(totals.value/1000000).replace(",", "X").replace(".", ",").replace("X",".") }} mi</strong><em>indicativo</em></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-head"><h2>Mapa de Projetos</h2><span class="legend">● Em operação &nbsp; ● Implantação &nbsp; ● Planejamento</span></div>
+                    <div class="map-placeholder">
+                        <div class="map-grid"></div>
+                        <span class="pin p1">●</span><span class="pin p2">●</span><span class="pin p3">●</span><span class="pin p4">●</span>
+                        <div class="map-label">Mapa geográfico<br><small>V1: área reservada para integração cartográfica</small></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head"><h2>Distribuição dos Ativos</h2></div>
+                    <div class="donut"><div><strong>{{ totals.assets }}</strong><small>ativos</small></div></div>
+                    <div class="legend-list">
+                        <span>● Carbono <b>36%</b></span><span>● Energia renovável <b>24%</b></span>
+                        <span>● Eficiência energética <b>16%</b></span><span>● Combustível evitado <b>12%</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head"><h2>Portfólio de Projetos</h2><button class="primary small">+ Novo Projeto</button></div>
+                <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>Projeto</th><th>OM</th><th>Categoria</th><th>Status</th><th>Ativos</th><th>CO₂e (t)</th><th>Energia (MWh)</th><th>Diesel (L)</th><th>Valor Potencial</th></tr></thead>
+                    <tbody>
+                    {% for p in projects %}
+                    <tr>
+                        <td>{{ p["code"] }}</td><td><strong>{{ p["name"] }}</strong></td><td>{{ p["om"] }}</td><td>{{ p["category"] }}</td>
+                        <td><span class="status">{{ p["status"] }}</span></td><td>{{ p["assets"] }}</td><td>{{ p["co2"] }}</td><td>{{ p["renewable"] }}</td><td>{{ "{:,.0f}".format(p["diesel"]).replace(",", ".") }}</td>
+                        <td>R$ {{ "{:,.0f}".format(p["value"]).replace(",", ".") }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="panel">
+                    <h2>Tipos de Ativos</h2>
+                    <div class="asset-cards">
+                        <div>🌿<b>Carbono</b><strong>662</strong></div>
+                        <div>⚡<b>Energia</b><strong>442</strong></div>
+                        <div>⚙<b>Eficiência</b><strong>298</strong></div>
+                        <div>⛽<b>Combustível</b><strong>221</strong></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h2>Status dos Ativos</h2>
+                    <div class="bars">
+                        <label>Registrado <i style="width:88%"></i></label>
+                        <label>Mensurado <i style="width:72%"></i></label>
+                        <label>Em verificação <i style="width:50%"></i></label>
+                        <label>Verificado <i style="width:42%"></i></label>
+                        <label>Emitido <i style="width:28%"></i></label>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h2>Valor Econômico</h2>
+                    <div class="economic">
+                        <div><span>Investimento</span><strong>R$ 6,8 mi</strong></div>
+                        <div><span>Economia</span><strong>R$ 4,2 mi</strong></div>
+                        <div><span>Receita ambiental</span><strong>R$ 1,9 mi</strong></div>
+                        <div><span>Valor potencial</span><strong>R$ {{ "{:,.1f}".format(totals.value/1000000).replace(",", "X").replace(".", ",").replace("X",".") }} mi</strong></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}

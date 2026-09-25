@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Login | Ativos Ambientais{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-visual">
+        <div class="brand">EMGEPRON</div>
+        <div class="brand-sub">EMPRESA GERENCIAL DE PROJETOS NAVAIS</div>
+        <div class="visual-copy">
+            <h1>PLATAFORMA<br>DE ATIVOS AMBIENTAIS</h1>
+            <p>Gestão • Rastreabilidade • Integridade • Valorização</p>
+        </div>
+        <div class="navy-badge">⚓ Marinha do Brasil</div>
+    </div>
+    <div class="auth-panel">
+        <div class="auth-card">
+            <div class="mini-logo">EMGEPRON</div>
+            <h2>Acessar plataforma</h2>
+            <p class="muted">Use seu e-mail institucional e senha.</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endwith %}
+            <form method="post" action="{{ url_for('login') }}">
+                <label>E-mail</label>
+                <input type="email" name="email" placeholder="seu.email@marinha.mil.br" required>
+                <label>Senha</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+                <button class="primary" type="submit">Entrar</button>
+            </form>
+            <a class="link" href="#">Esqueci minha senha</a>
+            <div class="divider"><span>ou</span></div>
+            <a class="secondary-btn" href="{{ url_for('register') }}">Solicitar acesso</a>
+            <p class="restricted">Ambiente corporativo • Uso restrito</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
