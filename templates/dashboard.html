@@ -1,122 +1,1660 @@
 {% extends "base.html" %}
+
 {% block title %}Dashboard | Ativos Ambientais{% endblock %}
+
 {% block content %}
+
+<!-- =========================================================
+     LEAFLET
+     ========================================================= -->
+
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+
+<style>
+
+    /* =========================================================
+       MAPA
+       ========================================================= */
+
+    #map {
+        width: 100%;
+        height: 360px;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+    }
+
+
+    .map-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+
+    .map-legend {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        z-index: 1000;
+
+        background: rgba(255, 255, 255, 0.95);
+
+        border-radius: 8px;
+
+        padding: 8px 12px;
+
+        box-shadow:
+            0 2px 10px rgba(0, 0, 0, 0.12);
+
+        font-size: 11px;
+
+        display: flex;
+        gap: 12px;
+
+        align-items: center;
+    }
+
+
+    .map-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+
+    .map-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+
+    .map-dot.operation {
+        background: #2e9b62;
+    }
+
+
+    .map-dot.implementation {
+        background: #e4a62a;
+    }
+
+
+    .map-dot.planning {
+        background: #367bc1;
+    }
+
+
+    .map-dot.development {
+        background: #8067b7;
+    }
+
+
+    /* =========================================================
+       MARCADORES PERSONALIZADOS
+       ========================================================= */
+
+    .project-marker {
+        width: 18px;
+        height: 18px;
+
+        border-radius: 50%;
+
+        border: 3px solid white;
+
+        box-shadow:
+            0 2px 7px rgba(0, 0, 0, 0.35);
+    }
+
+
+    .marker-operation {
+        background: #2e9b62;
+    }
+
+
+    .marker-implementation {
+        background: #e4a62a;
+    }
+
+
+    .marker-planning {
+        background: #367bc1;
+    }
+
+
+    .marker-development {
+        background: #8067b7;
+    }
+
+
+    /* =========================================================
+       POPUP
+       ========================================================= */
+
+    .project-popup {
+        min-width: 230px;
+
+        font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
+    }
+
+
+    .project-popup-header {
+        border-bottom:
+            1px solid #e5e9ef;
+
+        padding-bottom: 8px;
+
+        margin-bottom: 9px;
+    }
+
+
+    .project-popup-title {
+        color: #12345b;
+
+        font-size: 16px;
+
+        font-weight: 700;
+
+        margin-bottom: 3px;
+    }
+
+
+    .project-popup-om {
+        color: #6b7280;
+
+        font-size: 11px;
+    }
+
+
+    .project-popup-category {
+        display: inline-block;
+
+        margin-top: 7px;
+
+        padding: 4px 7px;
+
+        border-radius: 5px;
+
+        background: #eef4fa;
+
+        color: #1d527f;
+
+        font-size: 10px;
+
+        font-weight: 600;
+    }
+
+
+    .project-popup-data {
+        margin-top: 10px;
+    }
+
+
+    .project-popup-row {
+        display: flex;
+
+        justify-content: space-between;
+
+        gap: 20px;
+
+        padding: 4px 0;
+
+        font-size: 11px;
+    }
+
+
+    .project-popup-row span {
+        color: #697586;
+    }
+
+
+    .project-popup-row strong {
+        color: #172b4d;
+    }
+
+
+    .project-popup-status {
+        display: inline-block;
+
+        margin-top: 7px;
+
+        padding: 4px 7px;
+
+        border-radius: 5px;
+
+        background: #f3f6f8;
+
+        color: #44546a;
+
+        font-size: 10px;
+
+        font-weight: 600;
+    }
+
+
+    .project-popup-button {
+        display: block;
+
+        width: 100%;
+
+        margin-top: 10px;
+
+        padding: 7px 0;
+
+        border-radius: 5px;
+
+        background: #1f6fb2;
+
+        color: white;
+
+        text-align: center;
+
+        text-decoration: none;
+
+        font-size: 11px;
+
+        font-weight: 600;
+    }
+
+
+    .project-popup-button:hover {
+        background: #185b93;
+    }
+
+
+    /* =========================================================
+       MAPA: CONTROLES
+       ========================================================= */
+
+    .leaflet-control-zoom {
+        border: none !important;
+    }
+
+
+    .leaflet-control-zoom a {
+        color: #17395f !important;
+    }
+
+
+    .leaflet-control-attribution {
+        font-size: 9px !important;
+    }
+
+
+    /* =========================================================
+       CABEÇALHO DO MAPA
+       ========================================================= */
+
+    .map-header-info {
+        display: flex;
+
+        align-items: center;
+
+        gap: 8px;
+    }
+
+
+    .map-status-count {
+        color: #788698;
+
+        font-size: 11px;
+    }
+
+
+</style>
+
+
 <div class="app-shell">
+
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
     <aside class="sidebar">
-        <div class="brand side-brand">EMGEPRON</div>
-        <div class="brand-sub">PLATAFORMA DE ATIVOS AMBIENTAIS</div>
+
+        <div class="brand side-brand">
+            EMGEPRON
+        </div>
+
+
+        <div class="brand-sub">
+            PLATAFORMA DE ATIVOS AMBIENTAIS
+        </div>
+
+
         <nav>
-            <a class="active">⌂ Dashboard</a>
-            <a>▦ Projetos</a>
-            <a>◉ Ativos Ambientais</a>
-            <a>▣ Dados e Evidências</a>
-            <a>◫ Mensuração e Indicadores</a>
-            <a>✓ Verificação</a>
-            <a>⬡ Blockchain <small>(em breve)</small></a>
-            <a>↗ Comercialização</a>
-            <a>▤ Relatórios</a>
-            <a>⚙ Administração</a>
+
+            <a class="active">
+                ⌂ Dashboard
+            </a>
+
+
+            <a>
+                ▦ Projetos
+            </a>
+
+
+            <a>
+                ◉ Ativos Ambientais
+            </a>
+
+
+            <a>
+                ▣ Dados e Evidências
+            </a>
+
+
+            <a>
+                ◫ Mensuração e Indicadores
+            </a>
+
+
+            <a>
+                ✓ Verificação
+            </a>
+
+
+            <a>
+                ⬡ Blockchain
+                <small>(em breve)</small>
+            </a>
+
+
+            <a>
+                ↗ Comercialização
+            </a>
+
+
+            <a>
+                ▤ Relatórios
+            </a>
+
+
+            <a>
+                ⚙ Administração
+            </a>
+
         </nav>
-        <div class="side-footer">Tecnologia a serviço<br>da Marinha do Brasil</div>
+
+
+        <div class="side-footer">
+
+            Tecnologia a serviço<br>
+
+            da Marinha do Brasil
+
+        </div>
+
     </aside>
 
+
+
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
     <main class="main">
+
+
+        <!-- =================================================
+             TOPBAR
+             ================================================= -->
+
         <header class="topbar">
+
             <div>
-                <h1>Plataforma de Ativos Ambientais</h1>
-                <span>Gestão • Rastreabilidade • Integridade • Valorização</span>
+
+                <h1>
+                    Plataforma de Ativos Ambientais
+                </h1>
+
+
+                <span>
+                    Gestão • Rastreabilidade • Integridade • Valorização
+                </span>
+
             </div>
+
+
             <div class="user-menu">
-                <span>⚓ Marinha do Brasil</span>
-                <span class="avatar">{{ user["name"][0] }}</span>
-                <div>{{ user["name"] }}<small>{{ user["role"] }}</small></div>
-                <a href="{{ url_for('logout') }}">Sair</a>
+
+
+                <span>
+                    ⚓ Marinha do Brasil
+                </span>
+
+
+                <span class="avatar">
+                    {{ user["name"][0] }}
+                </span>
+
+
+                <div>
+
+                    {{ user["name"] }}
+
+                    <small>
+                        {{ user["role"] }}
+                    </small>
+
+                </div>
+
+
+                <a href="{{ url_for('logout') }}">
+                    Sair
+                </a>
+
             </div>
+
         </header>
 
+
+
+        <!-- =================================================
+             CONTENT
+             ================================================= -->
+
         <section class="content">
+
+
+            <!-- =================================================
+                 WELCOME
+                 ================================================= -->
+
             <div class="welcome">
-                <div><strong>Olá, {{ user["name"] }}.</strong> Bem-vindo à infraestrutura de gestão ambiental da EMGEPRON.</div>
-                <div class="pill">● {{ user["om"] }}</div>
+
+                <div>
+
+                    <strong>
+                        Olá, {{ user["name"] }}.
+                    </strong>
+
+                    Bem-vindo à infraestrutura de gestão ambiental da EMGEPRON.
+
+                </div>
+
+
+                <div class="pill">
+                    ● {{ user["om"] }}
+                </div>
+
             </div>
+
+
+
+            <!-- =================================================
+                 KPIs
+                 ================================================= -->
 
             <div class="kpis">
-                <div class="kpi"><span>Projetos</span><strong>{{ totals.projects }}</strong><em>+3 no período</em></div>
-                <div class="kpi green"><span>Ativos gerados</span><strong>{{ "{:,}".format(totals.assets).replace(",", ".") }}</strong><em>+12%</em></div>
-                <div class="kpi blue"><span>CO₂e mensurado</span><strong>{{ "{:,.1f}".format(totals.co2).replace(",", "X").replace(".", ",").replace("X",".") }} t</strong><em>+18%</em></div>
-                <div class="kpi yellow"><span>Energia renovável</span><strong>{{ "{:,.0f}".format(totals.renewable).replace(",", ".") }} MWh</strong><em>+25%</em></div>
-                <div class="kpi purple"><span>Diesel evitado</span><strong>{{ "{:,.0f}".format(totals.diesel).replace(",", ".") }} L</strong><em>+20%</em></div>
-                <div class="kpi money"><span>Valor potencial</span><strong>R$ {{ "{:,.1f}".format(totals.value/1000000).replace(",", "X").replace(".", ",").replace("X",".") }} mi</strong><em>indicativo</em></div>
+
+
+                <div class="kpi">
+
+                    <span>
+                        Projetos
+                    </span>
+
+
+                    <strong>
+                        {{ totals.projects }}
+                    </strong>
+
+
+                    <em>
+                        +3 no período
+                    </em>
+
+                </div>
+
+
+
+                <div class="kpi green">
+
+                    <span>
+                        Ativos gerados
+                    </span>
+
+
+                    <strong>
+                        {{ "{:,}".format(totals.assets).replace(",", ".") }}
+                    </strong>
+
+
+                    <em>
+                        +12%
+                    </em>
+
+                </div>
+
+
+
+                <div class="kpi blue">
+
+                    <span>
+                        CO₂e mensurado
+                    </span>
+
+
+                    <strong>
+
+                        {{
+                            "{:,.1f}".format(totals.co2)
+                            .replace(",", "X")
+                            .replace(".", ",")
+                            .replace("X", ".")
+                        }}
+
+                        t
+
+                    </strong>
+
+
+                    <em>
+                        +18%
+                    </em>
+
+                </div>
+
+
+
+                <div class="kpi yellow">
+
+                    <span>
+                        Energia renovável
+                    </span>
+
+
+                    <strong>
+
+                        {{
+                            "{:,.0f}".format(totals.renewable)
+                            .replace(",", ".")
+                        }}
+
+                        MWh
+
+                    </strong>
+
+
+                    <em>
+                        +25%
+                    </em>
+
+                </div>
+
+
+
+                <div class="kpi purple">
+
+                    <span>
+                        Diesel evitado
+                    </span>
+
+
+                    <strong>
+
+                        {{
+                            "{:,.0f}".format(totals.diesel)
+                            .replace(",", ".")
+                        }}
+
+                        L
+
+                    </strong>
+
+
+                    <em>
+                        +20%
+                    </em>
+
+                </div>
+
+
+
+                <div class="kpi money">
+
+                    <span>
+                        Valor potencial
+                    </span>
+
+
+                    <strong>
+
+                        R$
+
+                        {{
+                            "{:,.1f}".format(totals.value/1000000)
+                            .replace(",", "X")
+                            .replace(".", ",")
+                            .replace("X", ".")
+                        }}
+
+                        mi
+
+                    </strong>
+
+
+                    <em>
+                        indicativo
+                    </em>
+
+                </div>
+
+
             </div>
+
+
+
+            <!-- =================================================
+                 MAPA + DISTRIBUIÇÃO
+                 ================================================= -->
 
             <div class="grid-2">
+
+
+                <!-- =================================================
+                     MAPA
+                     ================================================= -->
+
                 <div class="panel">
-                    <div class="panel-head"><h2>Mapa de Projetos</h2><span class="legend">● Em operação &nbsp; ● Implantação &nbsp; ● Planejamento</span></div>
-                    <div class="map-placeholder">
-                        <div class="map-grid"></div>
-                        <span class="pin p1">●</span><span class="pin p2">●</span><span class="pin p3">●</span><span class="pin p4">●</span>
-                        <div class="map-label">Mapa geográfico<br><small>V1: área reservada para integração cartográfica</small></div>
+
+
+                    <div class="panel-head">
+
+
+                        <div class="map-header-info">
+
+                            <h2>
+                                Mapa de Projetos
+                            </h2>
+
+
+                            <span class="map-status-count">
+                                Portfólio georreferenciado
+                            </span>
+
+                        </div>
+
+
                     </div>
+
+
+                    <div class="map-wrapper">
+
+                        <div id="map"></div>
+
+
+                        <div class="map-legend">
+
+
+                            <div class="map-legend-item">
+
+                                <span class="map-dot operation"></span>
+
+                                Operação
+
+                            </div>
+
+
+                            <div class="map-legend-item">
+
+                                <span class="map-dot implementation"></span>
+
+                                Implantação
+
+                            </div>
+
+
+                            <div class="map-legend-item">
+
+                                <span class="map-dot planning"></span>
+
+                                Planejamento
+
+                            </div>
+
+
+                            <div class="map-legend-item">
+
+                                <span class="map-dot development"></span>
+
+                                Desenvolvimento
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
                 </div>
+
+
+
+                <!-- =================================================
+                     DISTRIBUIÇÃO DOS ATIVOS
+                     ================================================= -->
+
                 <div class="panel">
-                    <div class="panel-head"><h2>Distribuição dos Ativos</h2></div>
-                    <div class="donut"><div><strong>{{ totals.assets }}</strong><small>ativos</small></div></div>
+
+
+                    <div class="panel-head">
+
+                        <h2>
+                            Distribuição dos Ativos
+                        </h2>
+
+                    </div>
+
+
+                    <div class="donut">
+
+                        <div>
+
+                            <strong>
+                                {{ totals.assets }}
+                            </strong>
+
+                            <small>
+                                ativos
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
                     <div class="legend-list">
-                        <span>● Carbono <b>36%</b></span><span>● Energia renovável <b>24%</b></span>
-                        <span>● Eficiência energética <b>16%</b></span><span>● Combustível evitado <b>12%</b></span>
+
+
+                        <span>
+
+                            ● Carbono
+
+                            <b>
+                                36%
+                            </b>
+
+                        </span>
+
+
+                        <span>
+
+                            ● Energia renovável
+
+                            <b>
+                                24%
+                            </b>
+
+                        </span>
+
+
+                        <span>
+
+                            ● Eficiência energética
+
+                            <b>
+                                16%
+                            </b>
+
+                        </span>
+
+
+                        <span>
+
+                            ● Combustível evitado
+
+                            <b>
+                                12%
+                            </b>
+
+                        </span>
+
+
                     </div>
+
                 </div>
+
             </div>
+
+
+
+            <!-- =================================================
+                 PORTFÓLIO
+                 ================================================= -->
 
             <div class="panel">
-                <div class="panel-head"><h2>Portfólio de Projetos</h2><button class="primary small">+ Novo Projeto</button></div>
-                <div class="table-wrap">
-                <table>
-                    <thead><tr><th>ID</th><th>Projeto</th><th>OM</th><th>Categoria</th><th>Status</th><th>Ativos</th><th>CO₂e (t)</th><th>Energia (MWh)</th><th>Diesel (L)</th><th>Valor Potencial</th></tr></thead>
-                    <tbody>
-                    {% for p in projects %}
-                    <tr>
-                        <td>{{ p["code"] }}</td><td><strong>{{ p["name"] }}</strong></td><td>{{ p["om"] }}</td><td>{{ p["category"] }}</td>
-                        <td><span class="status">{{ p["status"] }}</span></td><td>{{ p["assets"] }}</td><td>{{ p["co2"] }}</td><td>{{ p["renewable"] }}</td><td>{{ "{:,.0f}".format(p["diesel"]).replace(",", ".") }}</td>
-                        <td>R$ {{ "{:,.0f}".format(p["value"]).replace(",", ".") }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+
+
+                <div class="panel-head">
+
+                    <h2>
+                        Portfólio de Projetos
+                    </h2>
+
+
+                    <button class="primary small">
+                        + Novo Projeto
+                    </button>
+
                 </div>
+
+
+                <div class="table-wrap">
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>ID</th>
+
+                                <th>
+                                    Projeto
+                                </th>
+
+                                <th>
+                                    OM
+                                </th>
+
+                                <th>
+                                    Categoria
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Ativos
+                                </th>
+
+                                <th>
+                                    CO₂e (t)
+                                </th>
+
+                                <th>
+                                    Energia (MWh)
+                                </th>
+
+                                <th>
+                                    Diesel (L)
+                                </th>
+
+                                <th>
+                                    Valor Potencial
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for p in projects %}
+
+
+                            <tr>
+
+
+                                <td>
+                                    {{ p["code"] }}
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ p["name"] }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+                                    {{ p["om"] }}
+                                </td>
+
+
+                                <td>
+                                    {{ p["category"] }}
+                                </td>
+
+
+                                <td>
+
+                                    <span class="status">
+                                        {{ p["status"] }}
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+                                    {{ p["assets"] }}
+                                </td>
+
+
+                                <td>
+                                    {{ p["co2"] }}
+                                </td>
+
+
+                                <td>
+                                    {{ p["renewable"] }}
+                                </td>
+
+
+                                <td>
+
+                                    {{
+                                        "{:,.0f}".format(p["diesel"])
+                                        .replace(",", ".")
+                                    }}
+
+                                </td>
+
+
+                                <td>
+
+                                    R$
+
+                                    {{
+                                        "{:,.0f}".format(p["value"])
+                                        .replace(",", ".")
+                                    }}
+
+                                </td>
+
+
+                            </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+                </div>
+
             </div>
 
+
+
+            <!-- =================================================
+                 PAINÉIS INFERIORES
+                 ================================================= -->
+
             <div class="grid-3">
+
+
+                <!-- =================================================
+                     TIPOS DE ATIVOS
+                     ================================================= -->
+
                 <div class="panel">
-                    <h2>Tipos de Ativos</h2>
+
+                    <h2>
+                        Tipos de Ativos
+                    </h2>
+
+
                     <div class="asset-cards">
-                        <div>🌿<b>Carbono</b><strong>662</strong></div>
-                        <div>⚡<b>Energia</b><strong>442</strong></div>
-                        <div>⚙<b>Eficiência</b><strong>298</strong></div>
-                        <div>⛽<b>Combustível</b><strong>221</strong></div>
+
+
+                        <div>
+
+                            🌿
+
+                            <b>
+                                Carbono
+                            </b>
+
+                            <strong>
+                                662
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            ⚡
+
+                            <b>
+                                Energia
+                            </b>
+
+                            <strong>
+                                442
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            ⚙
+
+                            <b>
+                                Eficiência
+                            </b>
+
+                            <strong>
+                                298
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            ⛽
+
+                            <b>
+                                Combustível
+                            </b>
+
+                            <strong>
+                                221
+                            </strong>
+
+                        </div>
+
+
                     </div>
+
                 </div>
+
+
+
+                <!-- =================================================
+                     STATUS
+                     ================================================= -->
+
                 <div class="panel">
-                    <h2>Status dos Ativos</h2>
+
+                    <h2>
+                        Status dos Ativos
+                    </h2>
+
+
                     <div class="bars">
-                        <label>Registrado <i style="width:88%"></i></label>
-                        <label>Mensurado <i style="width:72%"></i></label>
-                        <label>Em verificação <i style="width:50%"></i></label>
-                        <label>Verificado <i style="width:42%"></i></label>
-                        <label>Emitido <i style="width:28%"></i></label>
+
+
+                        <label>
+
+                            Registrado
+
+                            <i style="width:88%"></i>
+
+                        </label>
+
+
+                        <label>
+
+                            Mensurado
+
+                            <i style="width:72%"></i>
+
+                        </label>
+
+
+                        <label>
+
+                            Em verificação
+
+                            <i style="width:50%"></i>
+
+                        </label>
+
+
+                        <label>
+
+                            Verificado
+
+                            <i style="width:42%"></i>
+
+                        </label>
+
+
+                        <label>
+
+                            Emitido
+
+                            <i style="width:28%"></i>
+
+                        </label>
+
+
                     </div>
+
                 </div>
+
+
+
+                <!-- =================================================
+                     VALOR ECONÔMICO
+                     ================================================= -->
+
                 <div class="panel">
-                    <h2>Valor Econômico</h2>
+
+                    <h2>
+                        Valor Econômico
+                    </h2>
+
+
                     <div class="economic">
-                        <div><span>Investimento</span><strong>R$ 6,8 mi</strong></div>
-                        <div><span>Economia</span><strong>R$ 4,2 mi</strong></div>
-                        <div><span>Receita ambiental</span><strong>R$ 1,9 mi</strong></div>
-                        <div><span>Valor potencial</span><strong>R$ {{ "{:,.1f}".format(totals.value/1000000).replace(",", "X").replace(".", ",").replace("X",".") }} mi</strong></div>
+
+
+                        <div>
+
+                            <span>
+                                Investimento
+                            </span>
+
+                            <strong>
+                                R$ 6,8 mi
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Economia
+                            </span>
+
+                            <strong>
+                                R$ 4,2 mi
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Receita ambiental
+                            </span>
+
+                            <strong>
+                                R$ 1,9 mi
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Valor potencial
+                            </span>
+
+
+                            <strong>
+
+                                R$
+
+                                {{
+                                    "{:,.1f}".format(totals.value/1000000)
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                }}
+
+                                mi
+
+                            </strong>
+
+                        </div>
+
+
                     </div>
+
                 </div>
+
+
             </div>
+
         </section>
+
     </main>
+
 </div>
+
+
+
+<!-- =========================================================
+     LEAFLET JAVASCRIPT
+     ========================================================= -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
+
+<script>
+
+    /*
+     * ========================================================
+     * MAPA
+     * ========================================================
+     */
+
+    const map = L.map("map", {
+        zoomControl: true,
+        scrollWheelZoom: true
+    });
+
+
+    /*
+     * ========================================================
+     * CAMADA CARTOGRÁFICA
+     *
+     * CARTO Light
+     *
+     * Escolhida para o protótipo porque possui visual limpo
+     * para dashboards institucionais.
+     * ========================================================
+     */
+
+    L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom:
+            19,
+
+        attribution:
+            "Tiles &copy; Esri"
+    }
+    ).addTo(map);
+
+
+
+    /*
+     * ========================================================
+     * PROJETOS
+     *
+     * COORDENADAS DEMONSTRATIVAS
+     *
+     * Não utilizar localização sensível real de instalações
+     * militares em ambiente público.
+     * ========================================================
+     */
+
+    const projetos = [
+
+
+        {
+            nome:
+                "Ilha Rasa",
+
+            om:
+                "CAMR",
+
+            categoria:
+                "Transição Energética",
+
+            status:
+                "Em implantação",
+
+            lat:
+                -22.95,
+
+            lon:
+                -43.13,
+
+            co2:
+                "33,2 tCO₂e",
+
+            energia:
+                "58 MWh",
+
+            diesel:
+                "12.450 L",
+
+            statusClass:
+                "implementation"
+        },
+
+
+        {
+            nome:
+                "Usina Solar OM X",
+
+            om:
+                "OM X",
+
+            categoria:
+                "Energia Renovável",
+
+            status:
+                "Em operação",
+
+            lat:
+                -15.79,
+
+            lon:
+                -47.88,
+
+            co2:
+                "5.480 tCO₂e",
+
+            energia:
+                "24.500 MWh",
+
+            diesel:
+                "0 L",
+
+            statusClass:
+                "operation"
+        },
+
+
+        {
+            nome:
+                "Eficiência Energética",
+
+            om:
+                "OM Y",
+
+            categoria:
+                "Eficiência Energética",
+
+            status:
+                "Em planejamento",
+
+            lat:
+                -22.91,
+
+            lon:
+                -43.17,
+
+            co2:
+                "1.120 tCO₂e",
+
+            energia:
+                "2.300 MWh",
+
+            diesel:
+                "320.000 L",
+
+            statusClass:
+                "planning"
+        },
+
+
+        {
+            nome:
+                "Recuperação Ambiental",
+
+            om:
+                "OM Z",
+
+            categoria:
+                "Biodiversidade",
+
+            status:
+                "Em desenvolvimento",
+
+            lat:
+                -22.88,
+
+            lon:
+                -43.10,
+
+            co2:
+                "850 tCO₂e",
+
+            energia:
+                "0 MWh",
+
+            diesel:
+                "0 L",
+
+            statusClass:
+                "development"
+        }
+
+    ];
+
+
+
+    /*
+     * ========================================================
+     * ÍCONE DOS PROJETOS
+     * ========================================================
+     */
+
+    function criarIcone(statusClass) {
+
+        return L.divIcon({
+
+            className:
+                "",
+
+            html:
+                `<div class="project-marker marker-${statusClass}"></div>`,
+
+            iconSize:
+                [18, 18],
+
+            iconAnchor:
+                [9, 9],
+
+            popupAnchor:
+                [0, -9]
+
+        });
+
+    }
+
+
+
+    /*
+     * ========================================================
+     * LIMITES DO MAPA
+     * ========================================================
+     */
+
+    const bounds = [];
+
+
+
+    /*
+     * ========================================================
+     * MARCADORES
+     * ========================================================
+     */
+
+    projetos.forEach(
+        projeto => {
+
+
+            const marker =
+                L.marker(
+                    [
+                        projeto.lat,
+                        projeto.lon
+                    ],
+                    {
+                        icon:
+                            criarIcone(
+                                projeto.statusClass
+                            )
+                    }
+                )
+                .addTo(map);
+
+
+
+            /*
+             * Popup
+             */
+
+            marker.bindPopup(`
+
+                <div class="project-popup">
+
+
+                    <div class="project-popup-header">
+
+
+                        <div class="project-popup-title">
+
+                            ${projeto.nome}
+
+                        </div>
+
+
+                        <div class="project-popup-om">
+
+                            ${projeto.om}
+
+                        </div>
+
+
+                        <div class="project-popup-category">
+
+                            ${projeto.categoria}
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="project-popup-data">
+
+
+                        <div class="project-popup-row">
+
+                            <span>
+                                CO₂e mensurado
+                            </span>
+
+                            <strong>
+                                ${projeto.co2}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="project-popup-row">
+
+                            <span>
+                                Energia
+                            </span>
+
+                            <strong>
+                                ${projeto.energia}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="project-popup-row">
+
+                            <span>
+                                Diesel evitado
+                            </span>
+
+                            <strong>
+                                ${projeto.diesel}
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="project-popup-status">
+
+                        ${projeto.status}
+
+                    </div>
+
+
+
+                    <a
+                        href="#"
+                        class="project-popup-button"
+                        onclick="return false;"
+                    >
+
+                        Abrir projeto →
+
+                    </a>
+
+
+                </div>
+
+            `);
+
+
+
+            /*
+             * Adiciona projeto aos limites
+             */
+
+            bounds.push([
+                projeto.lat,
+                projeto.lon
+            ]);
+
+        }
+    );
+
+
+
+    /*
+     * ========================================================
+     * AJUSTE AUTOMÁTICO DO ZOOM
+     * ========================================================
+     */
+
+    if (bounds.length > 0) {
+
+        map.fitBounds(
+            bounds,
+            {
+                padding:
+                    [25, 25],
+
+                maxZoom:
+                    9
+            }
+        );
+
+    }
+
+
+</script>
+
+
 {% endblock %}
