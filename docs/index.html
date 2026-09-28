@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Plataforma de Ativos Ambientais | EMGEPRON</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <style>
+        #map {
+            width: 100%;
+            height: 360px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            z-index: 1000;
+            background: rgba(255,255,255,.95);
+            border-radius: 8px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+            font-size: 11px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .map-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .map-dot.operation { background:#2e9b62; }
+        .map-dot.implementation { background:#e4a62a; }
+        .map-dot.planning { background:#367bc1; }
+        .map-dot.development { background:#8067b7; }
+
+        .project-marker {
+            width:18px;
+            height:18px;
+            border-radius:50%;
+            border:3px solid white;
+            box-shadow:0 2px 7px rgba(0,0,0,.35);
+        }
+
+        .marker-operation { background:#2e9b62; }
+        .marker-implementation { background:#e4a62a; }
+        .marker-planning { background:#367bc1; }
+        .marker-development { background:#8067b7; }
+
+        .project-popup {
+            min-width:230px;
+            font-family:Arial,Helvetica,sans-serif;
+        }
+
+        .project-popup-header {
+            border-bottom:1px solid #e5e9ef;
+            padding-bottom:8px;
+            margin-bottom:9px;
+        }
+
+        .project-popup-title {
+            color:#12345b;
+            font-size:16px;
+            font-weight:700;
+            margin-bottom:3px;
+        }
+
+        .project-popup-om {
+            color:#6b7280;
+            font-size:11px;
+        }
+
+        .project-popup-category {
+            display:inline-block;
+            margin-top:7px;
+            padding:4px 7px;
+            border-radius:5px;
+            background:#eef4fa;
+            color:#1d527f;
+            font-size:10px;
+            font-weight:600;
+        }
+
+        .project-popup-data {
+            margin-top:10px;
+        }
+
+        .project-popup-row {
+            display:flex;
+            justify-content:space-between;
+            gap:20px;
+            padding:4px 0;
+            font-size:11px;
+        }
+
+        .project-popup-row span {
+            color:#697586;
+        }
+
+        .project-popup-row strong {
+            color:#172b4d;
+        }
+
+        .project-popup-status {
+            display:inline-block;
+            margin-top:7px;
+            padding:4px 7px;
+            border-radius:5px;
+            background:#f3f6f8;
+            color:#44546a;
+            font-size:10px;
+            font-weight:600;
+        }
+
+        .project-popup-button {
+            display:block;
+            width:100%;
+            margin-top:10px;
+            padding:7px 0;
+            border-radius:5px;
+            background:#1f6fb2;
+            color:white;
+            text-align:center;
+            text-decoration:none;
+            font-size:11px;
+            font-weight:600;
+        }
+
+        .project-popup-button:hover {
+            background:#185b93;
+        }
+
+        .demo-banner {
+            background:#fff8db;
+            color:#735c12;
+            border:1px solid #eadb9b;
+            border-radius:8px;
+            padding:10px 14px;
+            margin-bottom:14px;
+            font-size:12px;
+        }
+
+        .module-link {
+            cursor:pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar">
+
+        <div class="brand side-brand">
+            EMGEPRON
+        </div>
+
+        <div class="brand-sub">
+            PLATAFORMA DE ATIVOS AMBIENTAIS
+        </div>
+
+        <nav>
+            <a class="active module-link" data-module="Dashboard">⌂ Dashboard</a>
+            <a class="module-link" data-module="Projetos">▦ Projetos</a>
+            <a class="module-link" data-module="Ativos Ambientais">◉ Ativos Ambientais</a>
+            <a class="module-link" data-module="Dados e Evidências">▣ Dados e Evidências</a>
+            <a class="module-link" data-module="Mensuração e Indicadores">◫ Mensuração e Indicadores</a>
+            <a class="module-link" data-module="Verificação">✓ Verificação</a>
+            <a class="module-link" data-module="Blockchain">⬡ Blockchain <small>(demo)</small></a>
+            <a class="module-link" data-module="Comercialização">↗ Comercialização</a>
+            <a class="module-link" data-module="Relatórios">▤ Relatórios</a>
+            <a class="module-link" data-module="Administração">⚙ Administração</a>
+        </nav>
+
+        <div class="side-footer">
+            Tecnologia a serviço<br>
+            da Marinha do Brasil
+        </div>
+
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Plataforma de Ativos Ambientais</h1>
+                <span>Gestão • Rastreabilidade • Integridade • Valorização</span>
+            </div>
+
+            <div class="user-menu">
+                <span>⚓ Marinha do Brasil</span>
+
+                <span class="avatar">EM</span>
+
+                <div>
+                    <strong>Demo Institucional</strong>
+                    <small>Visualização pública</small>
+                </div>
+
+                <a href="#" onclick="return false;">Demo</a>
+            </div>
+
+        </header>
+
+        <section class="content">
+
+            <div class="demo-banner">
+                <strong>DEMONSTRAÇÃO PÚBLICA V1</strong>
+                &nbsp; Esta interface apresenta o conceito da Plataforma de Ativos Ambientais da EMGEPRON.
+                Os dados exibidos são demonstrativos.
+            </div>
+
+            <div class="welcome">
+
+                <div>
+                    <strong>Bem-vindo à infraestrutura de gestão ambiental da EMGEPRON.</strong>
+                    <br>
+                    Plataforma para gestão, mensuração, rastreabilidade e valorização de ativos ambientais.
+                </div>
+
+                <div class="pill">
+                    ● DEMO INSTITUCIONAL
+                </div>
+
+            </div>
+
+            <div class="kpis">
+
+                <div class="kpi">
+                    <span>Projetos</span>
+                    <strong>5</strong>
+                    <em>portfólio demonstrativo</em>
+                </div>
+
+                <div class="kpi green">
+                    <span>Ativos gerados</span>
+                    <strong>31</strong>
+                    <em>atributos ambientais</em>
+                </div>
+
+                <div class="kpi blue">
+                    <span>CO₂e mensurado</span>
+                    <strong>7.903,2 t</strong>
+                    <em>indicativo</em>
+                </div>
+
+                <div class="kpi yellow">
+                    <span>Energia renovável</span>
+                    <strong>26.858 MWh</strong>
+                    <em>indicativo</em>
+                </div>
+
+                <div class="kpi purple">
+                    <span>Diesel evitado</span>
+                    <strong>332.450 L</strong>
+                    <em>indicativo</em>
+                </div>
+
+                <div class="kpi money">
+                    <span>Valor potencial</span>
+                    <strong>R$ 11,28 mi</strong>
+                    <em>indicativo</em>
+                </div>
+
+            </div>
+
+            <div class="grid-2">
+
+                <div class="panel">
+
+                    <div class="panel-head">
+                        <div class="map-header-info">
+                            <h2>Mapa de Projetos</h2>
+                            <span class="map-status-count">Portfólio georreferenciado</span>
+                        </div>
+                    </div>
+
+                    <div class="map-wrapper">
+
+                        <div id="map"></div>
+
+                        <div class="map-legend">
+                            <div class="map-legend-item">
+                                <span class="map-dot operation"></span>
+                                Operação
+                            </div>
+
+                            <div class="map-legend-item">
+                                <span class="map-dot implementation"></span>
+                                Implantação
+                            </div>
+
+                            <div class="map-legend-item">
+                                <span class="map-dot planning"></span>
+                                Planejamento
+                            </div>
+
+                            <div class="map-legend-item">
+                                <span class="map-dot development"></span>
+                                Desenvolvimento
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="panel-head">
+                        <h2>Distribuição dos Ativos</h2>
+                    </div>
+
+                    <div class="donut">
+                        <div>
+                            <strong>31</strong>
+                            <small>ativos</small>
+                        </div>
+                    </div>
+
+                    <div class="legend-list">
+                        <span>● Carbono <b>36%</b></span>
+                        <span>● Energia renovável <b>24%</b></span>
+                        <span>● Eficiência energética <b>16%</b></span>
+                        <span>● Combustível evitado <b>12%</b></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-head">
+                    <h2>Portfólio de Projetos</h2>
+                    <button class="primary small" onclick="demoAction('Novo Projeto')">
+                        + Novo Projeto
+                    </button>
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Projeto</th>
+                                <th>OM</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                                <th>Ativos</th>
+                                <th>CO₂e (t)</th>
+                                <th>Energia (MWh)</th>
+                                <th>Diesel (L)</th>
+                                <th>Valor Potencial</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>IR-001</td>
+                                <td><strong>Ilha Rasa</strong></td>
+                                <td>CAMR</td>
+                                <td>Transição Energética</td>
+                                <td><span class="status">Em implantação</span></td>
+                                <td>4</td>
+                                <td>33,2</td>
+                                <td>58</td>
+                                <td>12.450</td>
+                                <td>R$ 450.000</td>
+                            </tr>
+
+                            <tr>
+                                <td>SO-002</td>
+                                <td><strong>Usina Solar OM X</strong></td>
+                                <td>OM X</td>
+                                <td>Energia Renovável</td>
+                                <td><span class="status">Em operação</span></td>
+                                <td>12</td>
+                                <td>5.480</td>
+                                <td>24.500</td>
+                                <td>0</td>
+                                <td>R$ 8.200.000</td>
+                            </tr>
+
+                            <tr>
+                                <td>EE-003</td>
+                                <td><strong>Eficiência Energética</strong></td>
+                                <td>OM Y</td>
+                                <td>Eficiência Energética</td>
+                                <td><span class="status">Em planejamento</span></td>
+                                <td>3</td>
+                                <td>1.120</td>
+                                <td>2.300</td>
+                                <td>320.000</td>
+                                <td>R$ 1.600.000</td>
+                            </tr>
+
+                            <tr>
+                                <td>BI-004</td>
+                                <td><strong>Recuperação Ambiental</strong></td>
+                                <td>OM Z</td>
+                                <td>Biodiversidade</td>
+                                <td><span class="status">Em desenvolvimento</span></td>
+                                <td>7</td>
+                                <td>850</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>R$ 720.000</td>
+                            </tr>
+
+                            <tr>
+                                <td>CO-005</td>
+                                <td><strong>Gestão de Resíduos</strong></td>
+                                <td>Base Naval A</td>
+                                <td>Resíduos</td>
+                                <td><span class="status">Em implantação</span></td>
+                                <td>5</td>
+                                <td>420</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>R$ 310.000</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const map = L.map("map", {
+    zoomControl: true,
+    scrollWheelZoom: true
+});
+
+L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri"
+    }
+).addTo(map);
+
+const projetos = [
+    {
+        nome: "Ilha Rasa",
+        om: "CAMR",
+        categoria: "Transição Energética",
+        status: "Em implantação",
+        lat: -22.95,
+        lon: -43.13,
+        co2: "33,2 tCO₂e",
+        energia: "58 MWh",
+        diesel: "12.450 L",
+        statusClass: "implementation"
+    },
+    {
+        nome: "Usina Solar OM X",
+        om: "OM X",
+        categoria: "Energia Renovável",
+        status: "Em operação",
+        lat: -15.79,
+        lon: -47.88,
+        co2: "5.480 tCO₂e",
+        energia: "24.500 MWh",
+        diesel: "0 L",
+        statusClass: "operation"
+    },
+    {
+        nome: "Eficiência Energética",
+        om: "OM Y",
+        categoria: "Eficiência Energética",
+        status: "Em planejamento",
+        lat: -22.91,
+        lon: -43.17,
+        co2: "1.120 tCO₂e",
+        energia: "2.300 MWh",
+        diesel: "320.000 L",
+        statusClass: "planning"
+    },
+    {
+        nome: "Recuperação Ambiental",
+        om: "OM Z",
+        categoria: "Biodiversidade",
+        status: "Em desenvolvimento",
+        lat: -22.88,
+        lon: -43.10,
+        co2: "850 tCO₂e",
+        energia: "0 MWh",
+        diesel: "0 L",
+        statusClass: "development"
+    }
+];
+
+function criarIcone(statusClass) {
+    return L.divIcon({
+        className: "",
+        html: `<div class="project-marker marker-${statusClass}"></div>`,
+        iconSize: [18,18],
+        iconAnchor: [9,9],
+        popupAnchor: [0,-9]
+    });
+}
+
+const bounds = [];
+
+projetos.forEach(projeto => {
+
+    const marker = L.marker(
+        [projeto.lat, projeto.lon],
+        {
+            icon: criarIcone(projeto.statusClass)
+        }
+    ).addTo(map);
+
+    marker.bindPopup(`
+        <div class="project-popup">
+
+            <div class="project-popup-header">
+
+                <div class="project-popup-title">
+                    ${projeto.nome}
+                </div>
+
+                <div class="project-popup-om">
+                    ${projeto.om}
+                </div>
+
+                <div class="project-popup-category">
+                    ${projeto.categoria}
+                </div>
+
+            </div>
+
+            <div class="project-popup-data">
+
+                <div class="project-popup-row">
+                    <span>CO₂e mensurado</span>
+                    <strong>${projeto.co2}</strong>
+                </div>
+
+                <div class="project-popup-row">
+                    <span>Energia</span>
+                    <strong>${projeto.energia}</strong>
+                </div>
+
+                <div class="project-popup-row">
+                    <span>Diesel evitado</span>
+                    <strong>${projeto.diesel}</strong>
+                </div>
+
+            </div>
+
+            <div class="project-popup-status">
+                ${projeto.status}
+            </div>
+
+            <a
+                href="#"
+                class="project-popup-button"
+                onclick="return false;"
+            >
+                Abrir projeto →
+            </a>
+
+        </div>
+    `);
+
+    bounds.push([projeto.lat, projeto.lon]);
+});
+
+if (bounds.length > 0) {
+    map.fitBounds(bounds, {
+        padding: [25,25],
+        maxZoom: 9
+    });
+}
+
+function demoAction(module) {
+    alert(
+        module +
+        " está disponível na arquitetura da V1 e será conectado ao backend nas próximas versões."
+    );
+}
+
+document.querySelectorAll(".module-link").forEach(link => {
+
+    link.addEventListener("click", function() {
+
+        const module = this.dataset.module;
+
+        document.querySelectorAll(".module-link")
+            .forEach(item => item.classList.remove("active"));
+
+        this.classList.add("active");
+
+        if (module !== "Dashboard") {
+            demoAction(module);
+        }
+
+    });
+
+});
+
+</script>
+
+</body>
+</html>
