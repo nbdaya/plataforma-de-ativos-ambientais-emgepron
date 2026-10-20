@@ -635,6 +635,36 @@ if (bounds.length > 0) {
 }
 
 function demoAction(module) {
+    if (module === "Novo Projeto") {
+        const nome = prompt("Nome do projeto:");
+        if (nome === null) return;
+
+        const om = prompt("Organização Militar (OM):");
+        if (om === null) return;
+
+        const categoria = prompt(
+            "Categoria do projeto:\n" +
+            "1 - Transição Energética\n" +
+            "2 - Energia Renovável\n" +
+            "3 - Eficiência Energética\n" +
+            "4 - Carbono / Uso da Terra\n" +
+            "5 - Biodiversidade\n" +
+            "6 - Resíduos\n" +
+            "7 - Recursos Hídricos\n" +
+            "8 - Outra"
+        );
+        if (categoria === null) return;
+
+        alert(
+            "Simulação de cadastro concluída!\n\n" +
+            "Projeto: " + nome + "\n" +
+            "OM: " + om + "\n" +
+            "Categoria: " + categoria + "\n\n" +
+            "Atenção: os dados não foram salvos."
+        );
+        return;
+    }
+
     alert(
         module +
         " está disponível na arquitetura da V1 e será conectado ao backend nas próximas versões."
