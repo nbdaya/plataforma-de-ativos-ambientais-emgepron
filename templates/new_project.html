@@ -1,0 +1,72 @@
+
+{% extends "base.html" %}
+
+{% block title %}Novo Projeto | Ativos Ambientais{% endblock %}
+
+{% block content %}
+<main class="page-container">
+    <header class="page-header">
+        <div>
+            <h1>Novo Projeto</h1>
+            <p>Preencha os dados básicos para cadastrar um projeto.</p>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p class="notice {{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    
+<form class="project-form" method="POST" action="{{ url_for('new_project') }}">
+    <div class="project-form-grid">
+        <div>
+            <label for="name">Nome do projeto</label>
+            <input id="name" name="name" required maxlength="150">
+        </div>
+
+        <div>
+            <label for="om">OM responsável</label>
+            <input id="om" name="om" required maxlength="150">
+        </div>
+
+        <div>
+            <label for="category">Categoria</label>
+            <select id="category" name="category" required>
+                <option value="">Selecione</option>
+                <option>Energia Renovável</option>
+                <option>Eficiência Energética</option>
+                <option>Transição Energética</option>
+                <option>Carbono / Uso da Terra</option>
+                <option>Biodiversidade</option>
+                <option>Resíduos</option>
+                <option>Recursos Hídricos</option>
+                <option>Outra</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+                <option value="">Selecione</option>
+                <option>Em planejamento</option>
+                <option>Em estudo de pré-viabilidade</option>
+                <option>Em desenvolvimento</option>
+                <option>Em implantação</option>
+                <option>Em operação</option>
+                <option>Suspenso</option>
+                <option>Concluído</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="primary" type="submit">Salvar projeto</button>
+        <a class="form-cancel" href="{{ url_for('projects') }}">Cancelar</a>
+    </div>
+</form>
+
+
+</main>
+{% endblock %}

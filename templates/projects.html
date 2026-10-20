@@ -1,0 +1,57 @@
+
+{% extends "base.html" %}
+
+{% block title %}Projetos | Ativos Ambientais{% endblock %}
+
+{% block content %}
+<main class="page-container">
+    <header class="page-header">
+        <div>
+            <h1>Projetos Ambientais</h1>
+            <p>Cadastro e acompanhamento do portfólio de projetos.</p>
+        </div>
+        <a class="primary" href="{{ url_for('new_project') }}">
+            + Novo Projeto
+        </a>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p class="notice {{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Projeto</th>
+                    <th>OM</th>
+                    <th>Categoria</th>
+                    <th>Status</th>
+                    <th>CO₂e (t)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in projects %}
+                <tr>
+                    <td>{{ p["code"] }}</td>
+                    <td><strong>{{ p["name"] }}</strong></td>
+                    <td>{{ p["om"] }}</td>
+                    <td>{{ p["category"] }}</td>
+                    <td>{{ p["status"] }}</td>
+                    <td>{{ p["co2"] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">Nenhum projeto cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p><a href="{{ url_for('dashboard') }}">← Voltar ao dashboard</a></p>
+</main>
+{% endblock %}

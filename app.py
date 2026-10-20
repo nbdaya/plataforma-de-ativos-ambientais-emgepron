@@ -202,6 +202,93 @@ def dashboard():
     }
     return render_template("dashboard.html", user=user, projects=projects, totals=totals)
 
+@app.route("/projects")
+def projects():
+    user = current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    conn = db()
+    projects = conn.execute(
+        "SELECT * FROM projects ORDER BY id DESC"
+    ).fetchall()
+    conn.close()
+
+    return render_template(
+        "projects.html",
+        user=user,
+        projects=projects
+    )
+
+@app.route("/projects/new", methods=["GET", "POST"])
+def new_project():
+    user = current_user()
+    if not user:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        om = request.form.get("om", "").strip()
+        category = request.form.get("category", "").strip()
+        status = request.form.get("status", "").strip()
+
+        prefixes = {
+                     "Transição Energética": "TE",
+                     "Energia Renovável": "ER",
+                     "Eficiência Energética": "EE",
+                     "Carbono / Uso da Terra": "CA",
+                     "Biodiversidade": "BI",
+                     "Resíduos": "RE",
+                     "Recursos Hídricos": "RH",
+                     "Outra": "OU",
+                    }
+        
+        conn = db()
+        prefix = prefixes.get(category)
+        if not prefix:
+           flash("Categoria inválida.", "error")
+           return redirect(url_for("new_project"))
+        
+        codes = conn.execute(
+            "SELECT code FROM projects WHERE code LIKE ?",
+            (f"{prefix}-%",)
+        ).fetchall()
+
+        numbers = [
+            int(row["code"].split("-")[-1])
+            for row in codes
+            if row["code"].split("-")[-1].isdigit()
+        ]
+
+        next_number = max(numbers, default=0) + 1
+        code = f"{prefix}-{next_number:03d}"
+       
+
+        existing = conn.execute(
+            "SELECT id FROM projects WHERE code = ?",
+            (code,)
+        ).fetchone()
+
+        if existing:
+            conn.close()
+            flash("Já existe um projeto com esse código.", "error")
+            return redirect(url_for("new_project"))
+
+        conn.execute("""
+            INSERT INTO projects
+            (code, name, om, category, status, assets, co2,
+             renewable, diesel, value)
+            VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, 0)
+        """, (code, name, om, category, status))
+
+        conn.commit()
+        conn.close()
+
+        flash("Projeto cadastrado com sucesso.", "success")
+        return redirect(url_for("projects"))
+
+    return render_template("new_project.html", user=user)
+
 @app.route("/logout")
 def logout():
     session.clear()
